@@ -6,7 +6,8 @@ module AoCPrelude (
   -- Parsing
   Parser, parseInput, int, everyLine,
   module Text.Megaparsec,
-  module Text.Megaparsec.Char
+  module Text.Megaparsec.Char,
+  module Text.Pretty.Simple
   ) where
 
 import Data.String.Interpolate
@@ -16,6 +17,7 @@ import Text.Megaparsec.Char
 import Data.Void
 import Control.Monad (void)
 import Data.Maybe
+import Text.Pretty.Simple
 
 runDay :: Int -> (String -> b) -> IO b
 runDay day task = task <$> readFile [i|Day#{day}-Input.txt|]

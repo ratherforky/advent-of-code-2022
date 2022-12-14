@@ -107,13 +107,9 @@ flatFile = choice
            <*  hspace1
            <*> takeWhileP (Just "File name")
                           (/= '\n')
-
   ]
 
-
-
 -- Output structure
-
 
 type FileTree = Map ID File
 type ID = String
