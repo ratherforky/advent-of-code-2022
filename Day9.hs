@@ -1,5 +1,6 @@
 {-# language QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 module Day9 where
 
 import AoCPrelude
@@ -8,6 +9,7 @@ import qualified Data.Set as S
 import Control.Applicative
 
 data CMD = MkCMD Dir Int
+  deriving (Show, Eq)
 
 data Dir
   = R
@@ -40,49 +42,92 @@ dir = choice
   ]
 
 data StateHT = MkS
-  { headPos :: Coord
-  , tailPos :: Coord
-  -- , ropePos :: [Coord]
+  { ropePos :: [Coord]
   , tailVisited :: Set Coord
   } deriving (Show, Eq)
 
 type Coord = (Int, Int)
 
-start :: StateHT
-start = MkS (0,0) (0,0) (S.singleton (0,0))
+start :: Int -> StateHT
+start n = MkS (replicate n (0,0)) (S.singleton (0,0))
 
--- l,r,u,d :: StateHT -> StateHT
--- l = move (-1) 0
--- r = move 1 0
--- u = move 0 1
--- d = move 0 (-1)
+moveD :: Dir -> Coord -> Coord
+moveD = \case
+  L -> move (-1) 0
+  R -> move 1 0
+  U -> move 0 1
+  D -> move 0 (-1)
 
 
-move :: Int -> Int -> StateHT -> StateHT
-move dx dy (MkS (x0,y0) (x1,y1) visited) = MkS{..}
+move :: Int -> Int -> Coord -> Coord
+move dx dy (x,y) = (x+dx,y+dy)
+
+cmdSem :: CMD -> StateHT -> StateHT
+cmdSem cmd (MkS rope visited) = MkS{..}
   where
-    headPos = (x0+dx,y0+dy)
-    tailPos
-      | dx /= 0 = if x0 == x1 + dx
-                  then (x0,y0)
-                  else (x1,y1)
-      | dy /= 0 = if y0 == y1 + dy
-                  then (x0,y0)
-                  else (x1,y1)
-    tailVisited = S.insert tailPos visited
+    (ropePos, tailCoords) = moveRope cmd rope
+    tailVisited = S.union tailCoords visited
 
-dirSem :: CMD -> StateHT -> StateHT
-dirSem (MkCMD d n) = applyN n
-  (case d of
-    L -> move (-1) 0
-    R -> move 1 0
-    U -> move 0 1
-    D -> move 0 (-1)
-  )
+moveRope :: CMD -> [Coord] -> ([Coord], Set Coord)
+moveRope (MkCMD d n) rope = (last intermediateRopes, tailCoordSet)
+  where
+    intermediateRopes = applyNScan n go rope
+    tailCoordSet = S.fromList $ map last intermediateRopes
+
+    go [] = []
+    go (coord0:coords) = catchupAll (coord0':coords)
+      where
+        coord0' = moveD d coord0
+
+catchupAll :: [Coord] -> [Coord]
+catchupAll [] = []
+catchupAll (coord0:coord1:coords) = coord0 : catchupAll (coord1':coords)
+  where
+    coord1'
+      | touching coord0 coord1 = coord1
+      | otherwise = catchup (coord0, coord1)
+catchupAll [coord] = [coord]
+
+touching :: Coord -> Coord -> Bool
+touching (x0,y0) (x1,y1)
+  = within 1 x0 x1 && within 1 y0 y1
+
+within :: Int -> Int -> Int -> Bool
+within n x y = abs (x - y) <= n
+
+catchup :: (Coord,Coord) -> Coord
+catchup ((x0,y0), (x1,y1)) = (step x0 x1, step y0 y1)
+
+step :: Int -> Int -> Int
+step target x
+  | x < target = x + 1
+  | x > target = x - 1
+  | otherwise  = x
+
+task :: Int -> String -> Int
+task n
+  = parseInput inputParser
+ .> map cmdSem
+ .> flip applyAll (start n)
+ .> tailVisited
+ .> S.size
 
 task1 :: String -> Int
-task1 = parseInput inputParser
-     .> map dirSem
-     .> flip applyAll start
-     .> tailVisited
-     .> S.size
+task1 = task 2
+
+
+example2 :: String
+example2 = [__i|
+  R 5
+  U 8
+  L 8
+  D 3
+  R 17
+  D 10
+  L 25
+  U 20
+|]
+
+
+task2 :: String -> Int
+task2 = task 10

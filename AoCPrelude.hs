@@ -9,7 +9,7 @@ module AoCPrelude (
   module Text.Megaparsec.Char,
   module Text.Pretty.Simple,
   -- Misc
-  applyN, applyAll
+  applyN, applyAll, applyNScan
   ) where
 
 import Data.String.Interpolate
@@ -45,3 +45,9 @@ applyN n0 f = go n0
 
 applyAll :: [a -> a] -> a -> a
 applyAll fs x = foldl' (flip ($)) x fs
+
+applyNScan :: Int -> (a -> a) -> a -> [a]
+applyNScan n0 f = go n0
+  where
+    go 0 a = [a]
+    go n a = a : go (n-1) (f a)
