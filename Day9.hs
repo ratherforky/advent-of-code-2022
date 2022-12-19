@@ -92,9 +92,6 @@ touching :: Coord -> Coord -> Bool
 touching (x0,y0) (x1,y1)
   = within 1 x0 x1 && within 1 y0 y1
 
-within :: Int -> Int -> Int -> Bool
-within n x y = abs (x - y) <= n
-
 catchup :: (Coord,Coord) -> Coord
 catchup ((x0,y0), (x1,y1)) = (step x0 x1, step y0 y1)
 
