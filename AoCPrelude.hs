@@ -4,17 +4,19 @@ module AoCPrelude (
   module Data.String.Interpolate,
   module Flow,
   -- Parsing
-  Parser, parseInput, int, everyLine,
+  Parser, parseInput, int, intSigned, everyLine,
   module Text.Megaparsec,
   module Text.Megaparsec.Char,
   module Text.Pretty.Simple,
   -- Misc
-  applyN, applyAll, applyNScan
+  applyN, applyAll, applyNScan,
+  scanUntilNothing,
+  within
   ) where
 
 import Data.String.Interpolate
 import Flow
-import Text.Megaparsec
+import Text.Megaparsec hiding (State)
 import Text.Megaparsec.Char
 import Data.Void
 import Control.Monad (void)
@@ -37,6 +39,14 @@ int :: Parser Int
 int = label "positive int"
     $ read <$> some numberChar
 
+intSigned :: Parser Int
+intSigned
+  = label "signed int"
+  $ choice
+      [ char '-' *> (negate <$> int)
+      , int
+      ]
+
 applyN :: Int -> (a -> a) -> a -> a
 applyN n0 f = go n0
   where
@@ -51,3 +61,14 @@ applyNScan n0 f = go n0
   where
     go 0 a = [a]
     go n a = a : go (n-1) (f a)
+
+scanUntilNothing :: (a -> Maybe a) -> a -> [a]
+scanUntilNothing f = go
+  where
+    go x = case f x of
+      Nothing -> [x]
+      Just x' -> x : go x'
+
+
+within :: Int -> Int -> Int -> Bool
+within n x y = abs (x - y) <= n
