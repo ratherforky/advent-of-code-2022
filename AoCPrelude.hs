@@ -4,10 +4,12 @@ module AoCPrelude (
   module Data.String.Interpolate,
   module Flow,
   -- Parsing
-  Parser, parseInput, int, intSigned, everyLine,
+  Parser, parseInput, int, intSigned, integral,
+  everyLine, tok,
   module Text.Megaparsec,
   module Text.Megaparsec.Char,
   module Text.Pretty.Simple,
+  void,
   -- Misc
   applyN, applyAll, applyNScan,
   scanUntilNothing,
@@ -39,6 +41,11 @@ int :: Parser Int
 int = label "positive int"
     $ read <$> some numberChar
 
+integral :: (Integral a, Read a) => Parser a
+integral = label "positive int"
+    $ read <$> some numberChar
+
+
 intSigned :: Parser Int
 intSigned
   = label "signed int"
@@ -46,6 +53,9 @@ intSigned
       [ char '-' *> (negate <$> int)
       , int
       ]
+
+tok :: String -> Parser ()
+tok str = space *> chunk str *> space
 
 applyN :: Int -> (a -> a) -> a -> a
 applyN n0 f = go n0
