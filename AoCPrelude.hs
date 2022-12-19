@@ -13,7 +13,7 @@ module AoCPrelude (
   -- Misc
   applyN, applyAll, applyNScan,
   scanUntilNothing,
-  within
+  within, betweenOrd, firstJusts
   ) where
 
 import Data.String.Interpolate
@@ -82,3 +82,13 @@ scanUntilNothing f = go
 
 within :: Int -> Int -> Int -> Bool
 within n x y = abs (x - y) <= n
+
+betweenOrd :: Ord a => a -> a -> a -> Bool
+betweenOrd maxX minX x = maxX >= x && x >= minX
+
+-- From GHC.Data.Maybe
+-- | Takes a list of @Maybes@ and returns the first @Just@ if there is one, or
+-- @Nothing@ otherwise.
+firstJusts :: Foldable f => f (Maybe a) -> Maybe a
+firstJusts = msum
+{-# SPECIALISE firstJusts :: [Maybe a] -> Maybe a #-}
