@@ -7,6 +7,7 @@ module Day13 where
 
 import AoCPrelude
 import Data.List.Extra (chunksOf)
+import Data.List
 
 type Packet = [PacketData]
 
@@ -70,31 +71,40 @@ task1
   =  parseInput packets
   .> chunksOf 2
   .> zip [1..]
-  .> filter (\(_,[pLeft, pRight]) -> comparePackets pLeft pRight == InOrder)
+  .> filter (\(_,[pLeft, pRight]) -> comparePackets pLeft pRight == LT)
   .> map fst
   .> sum
 
-data Comparison
-  = Continue -- EQ
-  | InOrder  -- LT
-  | OutOfOrder -- GT
-  deriving (Show, Eq)
+task2
+  =  parseInput packets
+  .> (decoderPackets ++)
+  .> sortBy comparePackets
+  .> zip [1..]
+  .> filter (\(_,p) -> p `elem` decoderPackets)
+  .> map fst
+  .> product
 
-comparePackets :: Packet -> Packet -> Comparison
+decoderPackets :: [Packet]
+decoderPackets = map divPacket [2, 6]
+
+divPacket :: Int -> Packet
+divPacket x = [List [Lit x]]
+
+comparePackets :: Packet -> Packet -> Ordering
 comparePackets pLeft pRight = comparePacketData (List pLeft) (List pRight)
 
-comparePacketData :: PacketData -> PacketData -> Comparison
+comparePacketData :: PacketData -> PacketData -> Ordering
 comparePacketData pLeft pRight = case (pLeft, pRight) of
-  (Lit x,   Lit y) -> if | x == y -> Continue
-                         | x <  y -> InOrder
-                         | otherwise -> OutOfOrder 
+  (Lit x,   Lit y) -> if | x == y -> EQ
+                         | x <  y -> LT
+                         | otherwise -> GT 
   (Lit x,   List ys) -> comparePacketData (List [Lit x]) (List ys)
   (List xs, Lit y)   -> comparePacketData (List xs) (List [Lit y])
   (List xs, List ys) -> zipCompare xs ys
   where
-    zipCompare []     []     = Continue
-    zipCompare []     (_:_)  = InOrder
-    zipCompare (_:_)  []     = OutOfOrder
+    zipCompare []     []     = EQ
+    zipCompare []     (_:_)  = LT
+    zipCompare (_:_)  []     = GT
     zipCompare (x:xs) (y:ys) = case comparePacketData x y of
-      Continue -> zipCompare xs ys
+      EQ -> zipCompare xs ys
       c -> c
