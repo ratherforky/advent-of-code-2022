@@ -5,7 +5,7 @@ module AoCPrelude (
   module Flow,
   -- Parsing
   Parser, parseInput, int, intSigned, integral,
-  everyLine, tok,
+  everyLine, manyIgnoreWhitespace, tok, delim,
   module Text.Megaparsec,
   module Text.Megaparsec.Char,
   module Text.Pretty.Simple,
@@ -37,6 +37,9 @@ parseInput parser = parseMaybe parser .> fromJust
 everyLine :: Parser a -> Parser [a]
 everyLine parser = many (parser <* (void newline <|> eof))
 
+manyIgnoreWhitespace :: Parser a -> Parser [a]
+manyIgnoreWhitespace parser = many (parser <* (space <|> eof))
+
 int :: Parser Int
 int = label "positive int"
     $ read <$> some numberChar
@@ -56,6 +59,10 @@ intSigned
 
 tok :: String -> Parser ()
 tok str = space *> chunk str *> space
+
+delim :: Parser a -> String -> Parser c -> Parser [a]
+delim elementP delimiter terminator
+  = many (elementP <* (try (tok ",") <|> void terminator))
 
 applyN :: Int -> (a -> a) -> a -> a
 applyN n0 f = go n0
